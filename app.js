@@ -49,7 +49,11 @@ app.get("/", (req, res) => {
 
 app.post("/", (req, res) => {
     let item = req.body.newItem;
-    items.push(item);
+    // items.push(item);
+    const newItemAdded = new Item ({
+    name: item
+    });
+    newItemAdded.save();
     res.redirect("/")
 })
 
