@@ -8,15 +8,20 @@
         <div class="box">
             <% for (var i = 0; i < newItem.length; i++) { %>
                 <% if (newItem[i] != "") { %>
-                    <div class="item">
-                        <input type="checkbox">
-                        <p class="itemText"><%= newItem[i].name %></p>
-                    </div>
+                    <form action="/delete" method="post">
+                        <div class="item">
+                            <input type="checkbox" name="checkBox" value="<%= newItem[i]._id %>" onchange="this.form.submit()">
+                            <p class="itemText">
+                                <%= newItem[i].name %>
+                            </p>
+                        </div>
+                        <input type="hidden" name="list" value="<%= listHeading%>"></input>
+                    </form>
                 <% } %>
                 <% } %>
                 <form class="item" action="/" method="post">
                     <input type="text" name="newItem" placeholder="New Item" autocomplete="off">
-                    <button>+</button>
+                    <button type="submit" name="list" value="<%= listHeading %>">+</button>
                 </form>
         </div>
     </ul>

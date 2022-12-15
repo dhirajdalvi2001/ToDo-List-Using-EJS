@@ -15,48 +15,94 @@ const itemsSchema = {
     name: String
 };
 
+const listSchema = {
+    name: String,
+    items: [itemsSchema]
+}
+
 const Item = mongoose.model("Item", itemsSchema);
+const List = mongoose.model("List", listSchema);
+
 const Item1 = new Item ({
-    name: "Item1"
+    name: "Add Something..."
 });
-const Item2 = new Item ({
-    name: "Item2"
-});
-const defaultItems = [Item1, Item2];
+const defaultItems = [Item1];
 
 app.use(bodyParser.urlencoded({extended: true}))
 app.use(express.static(__dirname + "/public")) // To use local files on the server like styles.css
 
 app.get("/", (req, res) => {
     Item.find({}, (err, result)=> {
-        if (result.length === 0) {
-            Item.insertMany(defaultItems, (err) => {
-            if (err) {
-                console.log(err);
-            } else {
-                console.log("Success");
-            }
-        });
-        res.redirect("/");
-        } else {
             res.render("list", {
             listHeading: "Today",
-            newItem: result,
+            newItem: result
         })
+    })
+})
+
+app.get("/:customList", (req, res) => {
+    const customList = req.params.customList;
+
+    List.findOne({name: customList}, (err, foundList) => {
+        if (!err) {
+            if (!foundList) {
+                    const list = new List({
+                    name: customList,
+                    items: defaultItems
+                    });
+                list.save();
+                res.redirect("/" + customList);
+            } else {
+            res.render("list", {
+            listHeading: foundList.name,
+            newItem: foundList.items,
+            })
+        }
         }
     })
 })
 
 app.post("/", (req, res) => {
     let item = req.body.newItem;
-    // items.push(item);
+    let list = req.body.list;
     const newItemAdded = new Item ({
-    name: item
+        name: item
     });
-    newItemAdded.save();
-    res.redirect("/")
+    if (list == "Today") {
+        newItemAdded.save();    
+        res.redirect("/")
+    } else {
+        List.findOne({name: list}, (err, foundList) => {
+            foundList.items.push(newItemAdded);
+            foundList.save();
+                res.redirect("/" + list);
+        })
+    }
 })
 
+app.post("/delete", (req, res) => {
+    const itemId = req.body.checkBox;
+    const list = req.body.list;
+    
+    if (list == "Today") {
+        Item.findByIdAndRemove(itemId, (err) => {
+        if (!err) {
+            res.redirect("/");
+        } else {
+            console.log(err);
+        }
+        })
+    } else {
+        List.findOneAndUpdate({name: list}, {$pull: {items: {_id: itemId}}}, (err, foundList) => {
+            if (!err) {
+                res.redirect("/" + list);
+            } else {
+                console.log(err);
+            }
+        });
+    }
+})
+ 
 app.listen(port, () => {
     console.log("Server started!");
 })
